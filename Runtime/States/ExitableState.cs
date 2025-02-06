@@ -10,6 +10,6 @@ namespace UState
         public virtual void FixedTick(float delta) { }
         public IStateMachine StateMachine { internal set; get; }
         internal CancellationTokenSource StateLifetimeTokenSource { set; get; }
-        protected CancellationToken LifetimeToken => StateLifetimeTokenSource.Token;
+        public CancellationToken LifetimeToken => StateLifetimeTokenSource.Token;
     }
 }

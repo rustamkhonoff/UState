@@ -190,10 +190,12 @@ Soon :zap:
 ### 3. `ModelState.cs`
 
 ```csharp
-    public abstract class ModelState<TModel> : State
+    public abstract class ModelState<TModel> : ExitableState
     {
         //Model required by State, initialized by StateMachine before state.Enter()
         public TModel Model { internal set; get; }
+         //Enter the state
+        public abstract UniTask Enter();
     }
 ```
 
