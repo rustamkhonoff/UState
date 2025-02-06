@@ -1,0 +1,15 @@
+{
+  "name": "com.rustamkhonoff.ustate",
+  "version": "1.0.0",
+  "displayName": "UState",
+  "description": "Simple UniTask based StateMachine",
+  "unity": "2021.3",
+  "unityRelease": "21f1",
+  "author": {
+    "name": "rustamkhonoff",
+    "email": "rustamkhonoff@gmail.com"
+  },
+  "dependencies": {
+    "com.cysharp.unitask": "2.5.0"
+  }
+}
