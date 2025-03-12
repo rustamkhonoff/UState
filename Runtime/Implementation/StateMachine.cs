@@ -12,6 +12,7 @@ namespace UState
 
         private readonly IStateFactory m_stateFactory;
         public ExitableState CurrentState { get; private set; }
+        private ExitableState m_tickState;
 
         public StateMachine(IStateFactory stateFactory)
         {
@@ -20,6 +21,8 @@ namespace UState
 
         public async UniTaskVoid Enter<TState>() where TState : State
         {
+            m_tickState = null;
+
             Type newStateType = typeof(TState);
             Type lastStateType = CurrentState?.GetType();
             ExitableState previousState = CurrentState;
@@ -39,6 +42,7 @@ namespace UState
                 UniTask enterTask = newState.Enter();
                 CurrentState = newState;
                 await enterTask;
+                m_tickState = CurrentState;
 
                 StateChanged?.Invoke(newStateType);
                 if (lastStateType != null) StateChangedFrom?.Invoke(lastStateType, newStateType);
@@ -60,6 +64,7 @@ namespace UState
 
         public async UniTaskVoid Enter<TState, TModel>(TModel model) where TState : ModelState<TModel>
         {
+            m_tickState = null;
             Type newStateType = typeof(TState);
             Type lastStateType = CurrentState?.GetType();
             ExitableState previousState = CurrentState;
@@ -80,6 +85,7 @@ namespace UState
                 UniTask enterTask = newState.Enter();
                 CurrentState = newState;
                 await enterTask;
+                m_tickState = CurrentState;
 
                 StateChanged?.Invoke(newStateType);
                 if (lastStateType != null) StateChangedFrom?.Invoke(lastStateType, newStateType);
@@ -101,12 +107,12 @@ namespace UState
 
         public void Tick(float delta)
         {
-            CurrentState?.Tick(delta);
+            m_tickState?.Tick(delta);
         }
 
         public void FixedTick(float delta)
         {
-            CurrentState?.FixedTick(delta);
+            m_tickState?.FixedTick(delta);
         }
 
         public void Dispose()
