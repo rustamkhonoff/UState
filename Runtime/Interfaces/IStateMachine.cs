@@ -5,7 +5,7 @@ namespace UState
     public interface IStateMachine
     {
         ExitableState CurrentState { get; }
-        UniTaskVoid Enter<TState>() where TState : State;
-        UniTaskVoid Enter<TState, TModel>(TModel model) where TState : ModelState<TModel>;
+        UniTask Enter<TState>() where TState : State;
+        UniTask Enter<TState, TModel>(TModel model) where TState : ModelState<TModel>;
     }
 }

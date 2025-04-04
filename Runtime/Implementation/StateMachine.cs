@@ -19,7 +19,7 @@ namespace UState
             m_stateFactory = stateFactory;
         }
 
-        public async UniTaskVoid Enter<TState>() where TState : State
+        public async UniTask Enter<TState>() where TState : State
         {
             m_tickState = null;
 
@@ -39,8 +39,9 @@ namespace UState
                     await previousState.Exit();
                 }
 
-                UniTask enterTask = newState.Enter();
                 CurrentState = newState;
+
+                UniTask enterTask = newState.Enter();
                 await enterTask;
                 m_tickState = CurrentState;
 
@@ -62,7 +63,7 @@ namespace UState
             }
         }
 
-        public async UniTaskVoid Enter<TState, TModel>(TModel model) where TState : ModelState<TModel>
+        public async UniTask Enter<TState, TModel>(TModel model) where TState : ModelState<TModel>
         {
             m_tickState = null;
             Type newStateType = typeof(TState);
@@ -82,8 +83,9 @@ namespace UState
                     await previousState.Exit();
                 }
 
-                UniTask enterTask = newState.Enter();
                 CurrentState = newState;
+
+                UniTask enterTask = newState.Enter();
                 await enterTask;
                 m_tickState = CurrentState;
 
@@ -117,6 +119,7 @@ namespace UState
 
         public void Dispose()
         {
+            CurrentState?.Exit();
             CurrentState?.StateLifetimeTokenSource?.Cancel();
         }
     }
