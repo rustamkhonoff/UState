@@ -4,7 +4,7 @@ namespace UState
 {
     public interface IStateMachineEvents
     {
-        event Action<Type> StateChanged;
-        event Action<Type, Type> StateChangedFrom;
+        event Action<IState> StateChanged;
+        event Action<IState, IState> StateChangedFrom;
     }
 }

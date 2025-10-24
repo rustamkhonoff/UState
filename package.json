@@ -1,6 +1,6 @@
 {
   "name": "com.rustamkhonoff.ustate",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "displayName": "UState",
   "description": "Simple UniTask based StateMachine",
   "unity": "2021.3",

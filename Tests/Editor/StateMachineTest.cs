@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Threading;
 using NUnit.Framework;
@@ -92,19 +91,19 @@ namespace UState.Tests.Editor
         [UnityTest]
         public IEnumerator CheckStateEventsTo()
         {
-            Type to = null;
+            IState to = null;
 
             m_stateMachineEvents.StateChanged += ToDo;
 
-            void ToDo(Type type)
+            void ToDo(IState state)
             {
-                to = type;
+                to = state;
                 m_stateMachineEvents.StateChanged -= ToDo;
             }
 
             m_stateMachine.Enter<StateA>();
 
-            Assert.IsTrue(to == typeof(StateA), "to == typeof(StateA)");
+            Assert.IsTrue(to is StateA, "to == typeof(StateA)");
 
             yield break;
         }
@@ -112,23 +111,23 @@ namespace UState.Tests.Editor
         [UnityTest]
         public IEnumerator CheckStateEventsFromAndTo()
         {
-            Type from = null, to = null;
+            IState from = null, to = null;
 
             m_stateMachine.Enter<StateA>();
 
             m_stateMachineEvents.StateChangedFrom += ToDo;
 
-            void ToDo(Type f, Type t)
+            void ToDo(IState state, IState state1)
             {
-                from = f;
-                to = t;
+                from = state;
+                to = state1;
                 m_stateMachineEvents.StateChangedFrom -= ToDo;
             }
 
             m_stateMachine.Enter<StateC>();
 
-            Assert.IsTrue(from == typeof(StateA), "from == typeof(StateA)");
-            Assert.IsTrue(to == typeof(StateC), "to == typeof(StateC)");
+            Assert.IsTrue(from is StateA, "from == typeof(StateA)");
+            Assert.IsTrue(to is StateC, "to == typeof(StateC)");
 
             yield break;
         }

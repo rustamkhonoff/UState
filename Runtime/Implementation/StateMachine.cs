@@ -1,18 +1,18 @@
-using System;
-using System.Threading;
 using Cysharp.Threading.Tasks;
+using System.Threading.Tasks;
+using System.Threading;
 using UnityEngine;
+using System;
 
 namespace UState
 {
-    public class StateMachine : IStateMachine, IStateMachineEvents, IStateMachineTicks, IDisposable
+    public class StateMachine : IStateMachine, IStateMachineEvents, IStateMachineTicks, IAsyncDisposable
     {
-        public event Action<Type> StateChanged;
-        public event Action<Type, Type> StateChangedFrom;
+        public event Action<IState> StateChanged;
+        public event Action<IState, IState> StateChangedFrom;
 
         private readonly IStateFactory m_stateFactory;
-        public ExitableState CurrentState { get; private set; }
-        private ExitableState m_tickState;
+        public IState CurrentState { get; private set; }
 
         public StateMachine(IStateFactory stateFactory)
         {
@@ -21,85 +21,43 @@ namespace UState
 
         public async UniTask Enter<TState>() where TState : State
         {
-            m_tickState = null;
-
-            Type newStateType = typeof(TState);
-            Type lastStateType = CurrentState?.GetType();
-            ExitableState previousState = CurrentState;
-
-            State newState = (State)m_stateFactory.Create(newStateType);
+            State newState = (State)m_stateFactory.Create(typeof(TState));
             newState.StateMachine = this;
             newState.StateLifetimeTokenSource = new CancellationTokenSource();
 
-            try
-            {
-                if (previousState != null)
-                {
-                    previousState.StateLifetimeTokenSource.Cancel();
-                    await previousState.Exit();
-                }
-
-                CurrentState = newState;
-
-                UniTask enterTask = newState.Enter();
-                await enterTask;
-                m_tickState = CurrentState;
-
-                StateChanged?.Invoke(newStateType);
-                if (lastStateType != null) StateChangedFrom?.Invoke(lastStateType, newStateType);
-            }
-            catch (ObjectDisposedException exception)
-            {
-                Debug.LogException(exception);
-            }
-            catch (OperationCanceledException canceledException)
-            {
-                Debug.LogException(canceledException);
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
-                throw;
-            }
+            await EnterInternal(newState);
         }
 
         public async UniTask Enter<TState, TModel>(TModel model) where TState : ModelState<TModel>
         {
-            m_tickState = null;
-            Type newStateType = typeof(TState);
-            Type lastStateType = CurrentState?.GetType();
-            ExitableState previousState = CurrentState;
-
-            ModelState<TModel> newState = (ModelState<TModel>)m_stateFactory.Create(newStateType);
+            ModelState<TModel> newState = (ModelState<TModel>)m_stateFactory.Create(typeof(TState));
             newState.Model = model;
             newState.StateMachine = this;
             newState.StateLifetimeTokenSource = new CancellationTokenSource();
 
+            await EnterInternal(newState);
+        }
+
+        private async UniTask EnterInternal(IState state)
+        {
+            IState lastState = CurrentState;
             try
             {
-                if (previousState != null)
+                if (lastState != null)
                 {
-                    previousState.StateLifetimeTokenSource.Cancel();
-                    await previousState.Exit();
+                    lastState.Dispose();
+                    await lastState.Exit();
                 }
 
-                CurrentState = newState;
+                CurrentState = state;
 
-                UniTask enterTask = newState.Enter();
-                await enterTask;
-                m_tickState = CurrentState;
+                await state.Enter();
 
-                StateChanged?.Invoke(newStateType);
-                if (lastStateType != null) StateChangedFrom?.Invoke(lastStateType, newStateType);
+                StateChanged?.Invoke(state);
+                if (lastState != null) StateChangedFrom?.Invoke(lastState, CurrentState);
             }
-            catch (ObjectDisposedException exception)
-            {
-                Debug.LogException(exception);
-            }
-            catch (OperationCanceledException canceledException)
-            {
-                Debug.LogException(canceledException);
-            }
+            catch (ObjectDisposedException) { }
+            catch (OperationCanceledException) { }
             catch (Exception e)
             {
                 Debug.LogException(e);
@@ -107,20 +65,16 @@ namespace UState
             }
         }
 
-        public void Tick(float delta)
-        {
-            m_tickState?.Tick(delta);
-        }
+        public void Tick(float delta) => CurrentState?.Tick(delta);
+        public void FixedTick(float delta) => CurrentState?.FixedTick(delta);
 
-        public void FixedTick(float delta)
-        {
-            m_tickState?.FixedTick(delta);
-        }
 
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
-            CurrentState?.Exit();
-            CurrentState?.StateLifetimeTokenSource?.Cancel();
+            if (CurrentState == null) return;
+
+            await CurrentState.Exit();
+            CurrentState.Dispose();
         }
     }
 }
