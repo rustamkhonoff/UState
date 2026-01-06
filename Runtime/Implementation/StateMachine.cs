@@ -6,7 +6,7 @@ using System;
 
 namespace UState
 {
-    public class StateMachine : IStateMachine, IStateMachineEvents, IStateMachineTicks, IAsyncDisposable
+    public class StateMachine : IStateMachine, IStateMachineEvents, IStateMachineTicks, IDisposable
     {
         public event Action<IState> StateChanged;
         public event Action<IState, IState> StateChangedFrom;
@@ -68,13 +68,10 @@ namespace UState
         public void Tick(float delta) => CurrentState?.Tick(delta);
         public void FixedTick(float delta) => CurrentState?.FixedTick(delta);
 
-
-        public async ValueTask DisposeAsync()
+        public void Dispose()
         {
             if (CurrentState == null) return;
-
-            await CurrentState.Exit();
-            CurrentState.Dispose();
+            CurrentState.Exit().ContinueWith(() => CurrentState?.Dispose()).Forget();
         }
     }
 }
